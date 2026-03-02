@@ -43,8 +43,8 @@ export default async function CotacoesDisponiveisPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Oportunidades</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <h1 className="text-2xl font-bold text-white">Oportunidades</h1>
+          <p className="text-sm text-gray-400 mt-1">
             Encontre novas cotações e envie suas melhores propostas
           </p>
         </div>
@@ -75,12 +75,12 @@ export default async function CotacoesDisponiveisPage() {
                   <CardBody className="p-0">
                     <div className="flex flex-col md:flex-row">
                       {/* Left highlight for state */}
-                      <div className={`w-1 md:w-2 ${alreadyProposed ? 'bg-neutral-200' : 'bg-primary-500'}`} />
+                      <div className={`w-1 md:w-2 ${alreadyProposed ? 'bg-white/10' : 'bg-indigo-500'}`} />
                       
                       <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="space-y-3 flex-1 min-w-0">
                           <div className="flex items-center gap-3">
-                            <h3 className="text-lg font-bold text-neutral-900 truncate group-hover:text-primary-600 transition-colors">
+                            <h3 className="text-lg font-bold text-white truncate group-hover:text-indigo-400 transition-colors">
                               {cotacao.titulo}
                             </h3>
                             {alreadyProposed ? (
@@ -95,22 +95,22 @@ export default async function CotacoesDisponiveisPage() {
                           </div>
                           
                           <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs">
-                            <span className="flex items-center gap-1.5 font-semibold text-neutral-600">
-                              <Building2 className="h-3.5 w-3.5 text-neutral-400" />
+                            <span className="flex items-center gap-1.5 font-semibold text-gray-300">
+                              <Building2 className="h-3.5 w-3.5 text-gray-500" />
                               {(cotacao as any).profiles?.empresa || (cotacao as any).profiles?.nome}
                             </span>
-                            <span className="flex items-center gap-1.5 text-neutral-400">
+                            <span className="flex items-center gap-1.5 text-gray-500">
                               <Package className="h-3.5 w-3.5" />
                               {cotacao.cotacao_itens?.length ?? 0} itens
                             </span>
-                            <span className="text-neutral-300">|</span>
-                            <span className="text-neutral-400">
+                            <span className="text-white/10">|</span>
+                            <span className="text-gray-500">
                               Publicada em {formatDate(cotacao.created_at)}
                             </span>
                           </div>
                           
                           {cotacao.descricao && (
-                            <p className="text-sm text-neutral-500 line-clamp-1 italic bg-neutral-50/50 p-2 rounded">
+                            <p className="text-sm text-gray-400 line-clamp-1 italic bg-white/[0.03] p-2 rounded">
                               &ldquo;{cotacao.descricao}&rdquo;
                             </p>
                           )}

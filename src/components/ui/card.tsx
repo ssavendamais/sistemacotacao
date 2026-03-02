@@ -12,10 +12,10 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        "bg-white border border-neutral-200 rounded-[var(--radius-lg)] shadow-xs",
+        "bg-[#1F2937] border border-white/[0.06] rounded-[var(--radius-lg)] shadow-xs",
         interactive &&
-          "hover:shadow-md hover:border-primary-200 cursor-pointer transition-all duration-200",
-        highlighted && "border-primary-300 bg-primary-50/30",
+          "hover:shadow-md hover:border-indigo-500/30 cursor-pointer transition-all duration-200",
+        highlighted && "border-indigo-500/20 bg-indigo-500/[0.04]",
         className
       )}
       {...props}
@@ -32,7 +32,7 @@ const CardHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex items-center justify-between px-5 py-4 border-b border-neutral-100",
+      "flex items-center justify-between px-5 py-4 border-b border-white/[0.06]",
       className
     )}
     {...props}
@@ -47,7 +47,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("text-base font-semibold text-neutral-900", className)}
+    className={cn("text-base font-semibold text-white", className)}
     {...props}
   />
 ));
@@ -60,7 +60,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-neutral-500", className)}
+    className={cn("text-sm text-gray-400", className)}
     {...props}
   />
 ));
@@ -87,7 +87,7 @@ const CardFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex items-center justify-end gap-3 px-5 py-4 border-t border-neutral-100",
+      "flex items-center justify-end gap-3 px-5 py-4 border-t border-white/[0.06]",
       className
     )}
     {...props}
@@ -96,4 +96,3 @@ const CardFooter = React.forwardRef<
 CardFooter.displayName = "CardFooter";
 
 export { Card, CardBody, CardDescription, CardFooter, CardHeader, CardTitle };
-

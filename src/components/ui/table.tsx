@@ -24,7 +24,7 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("bg-neutral-50 border-b border-neutral-200", className)}
+    className={cn("bg-white/[0.03] border-b border-white/[0.06]", className)}
     {...props}
   />
 ));
@@ -35,7 +35,7 @@ const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tbody ref={ref} className={cn("divide-y divide-neutral-100", className)} {...props} />
+  <tbody ref={ref} className={cn("divide-y divide-white/[0.04]", className)} {...props} />
 ));
 TableBody.displayName = "TableBody";
 
@@ -47,8 +47,8 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "hover:bg-neutral-50/50 transition-colors",
-      selected && "bg-primary-50/30",
+      "hover:bg-white/[0.03] transition-colors",
+      selected && "bg-indigo-500/[0.06]",
       className
     )}
     {...props}
@@ -68,8 +68,8 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
     <th
       ref={ref}
       className={cn(
-        "px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider",
-        sortable && "cursor-pointer select-none hover:text-neutral-700",
+        "px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider",
+        sortable && "cursor-pointer select-none hover:text-gray-200",
         className
       )}
       onClick={sortable ? onSort : undefined}
@@ -78,7 +78,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
       <span className="inline-flex items-center gap-1">
         {children}
         {sortable && (
-          <span className="text-neutral-300">
+          <span className="text-gray-600">
             {sortDirection === "asc" ? (
               <ArrowUp className="h-3.5 w-3.5 text-primary-500" />
             ) : sortDirection === "desc" ? (
@@ -101,11 +101,10 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("px-4 py-3 text-neutral-700", className)}
+    className={cn("px-4 py-3 text-gray-300", className)}
     {...props}
   />
 ));
 TableCell.displayName = "TableCell";
 
 export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow };
-

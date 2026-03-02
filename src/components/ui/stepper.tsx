@@ -39,10 +39,10 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                     isCompleted &&
                       "bg-primary-500 text-white",
                     isCurrent &&
-                      "bg-primary-100 text-primary-700 ring-2 ring-primary-500",
+                      "bg-indigo-500/20 text-indigo-400 ring-2 ring-indigo-500",
                     !isCompleted &&
                       !isCurrent &&
-                      "bg-neutral-100 text-neutral-400"
+                      "bg-white/[0.06] text-gray-500"
                   )}
                 >
                   {isCompleted ? (
@@ -66,7 +66,7 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                     {step.label}
                   </p>
                   {step.description && (
-                    <p className="text-xs text-neutral-400 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       {step.description}
                     </p>
                   )}
@@ -77,7 +77,7 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
                 <div
                   className={cn(
                     "flex-1 h-0.5 mx-4 rounded-full transition-colors duration-200",
-                    isCompleted ? "bg-primary-500" : "bg-neutral-200"
+                    isCompleted ? "bg-primary-500" : "bg-white/[0.06]"
                   )}
                 />
               )}
@@ -89,15 +89,15 @@ export function Stepper({ steps, currentStep, className }: StepperProps) {
       {/* Mobile: compact */}
       <div className="sm:hidden">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-primary-700">
+          <span className="text-sm font-medium text-indigo-400">
             Etapa {currentStep + 1} de {steps.length}
           </span>
-          <span className="text-sm text-neutral-500">
+          <span className="text-sm text-gray-400">
             {steps[currentStep]?.label}
           </span>
         </div>
         {/* Progress bar */}
-        <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
           <div
             className="h-full bg-primary-500 rounded-full transition-all duration-300 ease-out"
             style={{

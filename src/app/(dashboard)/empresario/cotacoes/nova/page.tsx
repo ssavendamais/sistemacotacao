@@ -1,38 +1,59 @@
 "use client";
 
-import { criarCotacao } from "@/actions/cotacoes";
+import { buscarProdutoPorBarcode, criarCotacao } from "@/actions/cotacoes";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardFooter } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { Stepper, type StepperStep } from "@/components/ui/stepper";
-import { UNIDADES } from "@/lib/constants";
-import { ArrowLeft, ArrowRight, Info, Plus, Trash2 } from "lucide-react";
+import { CATEGORIAS, UNIT_TYPE_LABELS, UNIT_TYPES, type UnitType } from "@/lib/constants";
+import {
+    ArrowLeft,
+    ArrowRight,
+    Barcode,
+    ChevronDown,
+    Info,
+    Package,
+    Plus,
+    Search,
+    Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 /* ─── Step definitions ─── */
 const steps: StepperStep[] = [
   { label: "Dados básicos", description: "Título e prazo" },
-  { label: "Itens", description: "Produtos e serviços" },
+  { label: "Itens", description: "Produtos e quantidades" },
   { label: "Revisão", description: "Confirmar e enviar" },
-];
-
-const categorias = [
-  { value: "alimentos", label: "Alimentos" },
-  { value: "bebidas", label: "Bebidas" },
-  { value: "limpeza", label: "Limpeza" },
-  { value: "escritorio", label: "Escritório" },
-  { value: "tecnologia", label: "Tecnologia" },
-  { value: "outros", label: "Outros" },
 ];
 
 interface ItemForm {
   id: string;
   nome_produto: string;
-  quantidade: number;
-  unidade: string;
+  descricao: string;
+  codigo_barras: string;
+  categoria: string;
+  estoque_atual: string;
+  quantidade_sugerida: string;
+  tipo_unidade: UnitType;
   observacao: string;
+  product_id?: string;
+  // internal state
+  _barcodeLoading?: boolean;
+  _barcodeFound?: boolean;
 }
+
+const defaultItem = (): ItemForm => ({
+  id: String(Date.now() + Math.random()),
+  nome_produto: "",
+  descricao: "",
+  codigo_barras: "",
+  categoria: "outros",
+  estoque_atual: "",
+  quantidade_sugerida: "1",
+  tipo_unidade: "UN",
+  observacao: "",
+});
 
 export default function NovaCotacaoPage() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -41,54 +62,74 @@ export default function NovaCotacaoPage() {
 
   // Step 1 — Dados básicos
   const [titulo, setTitulo] = useState("");
-  const [categoria, setCategoria] = useState("outros");
   const [prazo, setPrazo] = useState("");
   const [descricao, setDescricao] = useState("");
 
   // Step 2 — Itens
-  const [itens, setItens] = useState<ItemForm[]>([
-    { id: "1", nome_produto: "", quantidade: 1, unidade: "un", observacao: "" },
-  ]);
+  const [itens, setItens] = useState<ItemForm[]>([defaultItem()]);
+  const [bulkUnit, setBulkUnit] = useState<UnitType>("UN");
 
-  const addItem = () => {
-    setItens([
-      ...itens,
-      {
-        id: String(Date.now()),
-        nome_produto: "",
-        quantidade: 1,
-        unidade: "un",
-        observacao: "",
-      },
-    ]);
-  };
+  /* ─── Item helpers ─── */
+  const addItem = () => setItens((prev) => [...prev, defaultItem()]);
 
   const removeItem = (id: string) => {
-    if (itens.length > 1) {
-      setItens(itens.filter((item) => item.id !== id));
-    }
+    if (itens.length > 1) setItens(itens.filter((i) => i.id !== id));
   };
 
-  const updateItem = (id: string, field: keyof ItemForm, value: string | number) => {
-    setItens(
-      itens.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+  const updateItem = (id: string, field: keyof ItemForm, value: string) => {
+    setItens(itens.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+  };
+
+  const applyBulkUnit = () => {
+    setItens(itens.map((item) => ({ ...item, tipo_unidade: bulkUnit })));
+  };
+
+  async function handleBarcodeSearch(itemId: string, barcode: string) {
+    if (!barcode.trim()) return;
+    setItens((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, _barcodeLoading: true, _barcodeFound: undefined } : i))
     );
-  };
+    try {
+      const product = await buscarProdutoPorBarcode(barcode.trim());
+      if (product) {
+        setItens((prev) =>
+          prev.map((i) =>
+            i.id === itemId
+              ? {
+                  ...i,
+                  nome_produto: product.name,
+                  descricao: product.description || "",
+                  categoria: product.category || "outros",
+                  product_id: product.id,
+                  _barcodeLoading: false,
+                  _barcodeFound: true,
+                }
+              : i
+          )
+        );
+      } else {
+        setItens((prev) =>
+          prev.map((i) =>
+            i.id === itemId ? { ...i, _barcodeLoading: false, _barcodeFound: false } : i
+          )
+        );
+      }
+    } catch {
+      setItens((prev) =>
+        prev.map((i) => (i.id === itemId ? { ...i, _barcodeLoading: false } : i))
+      );
+    }
+  }
 
+  /* ─── Navigation ─── */
   const next = () => {
     if (currentStep === 0) {
-      if (!titulo.trim()) {
-        setError("Título é obrigatório.");
-        return;
-      }
+      if (!titulo.trim()) { setError("Título é obrigatório."); return; }
       setError(null);
     }
     if (currentStep === 1) {
-      const validItens = itens.filter((i) => i.nome_produto.trim());
-      if (validItens.length === 0) {
-        setError("Adicione pelo menos um item com nome.");
-        return;
-      }
+      const valid = itens.filter((i) => i.nome_produto.trim());
+      if (valid.length === 0) { setError("Adicione pelo menos um item com nome."); return; }
       setError(null);
     }
     setCurrentStep(currentStep + 1);
@@ -104,8 +145,22 @@ export default function NovaCotacaoPage() {
     formData.append("titulo", titulo);
     formData.append("descricao", descricao);
     formData.append("data_limite", prazo);
-    
-    const validItens = itens.filter((item) => item.nome_produto.trim());
+
+    const validItens = itens
+      .filter((item) => item.nome_produto.trim())
+      .map((item) => ({
+        nome_produto: item.nome_produto.trim(),
+        descricao: item.descricao || undefined,
+        codigo_barras: item.codigo_barras || undefined,
+        categoria: item.categoria,
+        estoque_atual: item.estoque_atual ? parseFloat(item.estoque_atual) : undefined,
+        quantidade_sugerida: item.quantidade_sugerida ? parseFloat(item.quantidade_sugerida) : 1,
+        tipo_unidade: item.tipo_unidade,
+        quantidade: item.quantidade_sugerida ? parseFloat(item.quantidade_sugerida) : 1,
+        observacao: item.observacao || undefined,
+        product_id: item.product_id,
+      }));
+
     formData.append("itens", JSON.stringify(validItens));
 
     const result = await criarCotacao(formData);
@@ -116,19 +171,19 @@ export default function NovaCotacaoPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link
           href="/empresario/cotacoes"
-          className="p-2 rounded-[var(--radius-md)] text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"
+          className="p-2 rounded-[var(--radius-md)] text-gray-500 hover:text-gray-300 hover:bg-white/[0.04] transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Nova Cotação</h1>
-          <p className="text-sm text-neutral-500">
-            Preencha os dados e os itens para receber propostas de fornecedores
+          <h1 className="text-2xl font-bold text-white">Nova Cotação</h1>
+          <p className="text-sm text-gray-400">
+            Defina os itens e as unidades para que os fornecedores respondam corretamente
           </p>
         </div>
       </div>
@@ -137,7 +192,7 @@ export default function NovaCotacaoPage() {
       <Stepper steps={steps} currentStep={currentStep} />
 
       {error && (
-        <div className="bg-danger-light text-danger p-4 rounded-[var(--radius-lg)] border border-red-200 text-sm flex gap-3 animate-fade-in">
+        <div className="bg-red-500/10 text-red-400 p-4 rounded-[var(--radius-lg)] border border-red-500/20 text-sm flex gap-3 animate-fade-in">
           <Info className="h-5 w-5 shrink-0" />
           {error}
         </div>
@@ -146,6 +201,7 @@ export default function NovaCotacaoPage() {
       {/* Step Content */}
       <Card>
         <CardBody className="space-y-6">
+
           {/* ─── Step 1: Dados básicos ─── */}
           {currentStep === 0 && (
             <div className="space-y-4 animate-fade-in">
@@ -157,12 +213,6 @@ export default function NovaCotacaoPage() {
                 autoFocus
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Select
-                  label="Categoria"
-                  options={categorias}
-                  value={categoria}
-                  onChange={(e) => setCategoria(e.target.value)}
-                />
                 <Input
                   label="Data limite para propostas"
                   type="datetime-local"
@@ -172,76 +222,183 @@ export default function NovaCotacaoPage() {
               </div>
               <Textarea
                 label="Descrição / Observações Gerais"
-                placeholder="Descreva requisitos especiais, condições de entrega, etc."
+                placeholder="Condições de entrega, requisitos especiais, etc."
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
-                rows={4}
+                rows={3}
               />
             </div>
           )}
 
           {/* ─── Step 2: Itens ─── */}
           {currentStep === 1 && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-neutral-500">
-                  Adicione os itens que deseja cotar.
+            <div className="space-y-5 animate-fade-in">
+              {/* Toolbar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
+                <p className="text-sm text-gray-400">
+                  Adicione os produtos para cotar. Os fornecedores verão: nome, barcode, categoria e unidade.
                 </p>
-                <Button variant="ghost" size="sm" onClick={addItem}>
-                  <Plus className="h-4 w-4" />
-                  Novo Item
-                </Button>
+                <div className="flex items-center gap-2">
+                  {/* Bulk unit selector */}
+                  <div className="flex items-center gap-2 bg-white/[0.04] rounded-[var(--radius-md)] px-3 py-1.5 border border-white/[0.06]">
+                    <span className="text-xs text-gray-400 whitespace-nowrap">Def. todos:</span>
+                    <select
+                      value={bulkUnit}
+                      onChange={(e) => setBulkUnit(e.target.value as UnitType)}
+                      className="bg-transparent text-xs text-white border-none outline-none cursor-pointer"
+                    >
+                      {UNIT_TYPES.map((u) => (
+                        <option key={u} value={u} className="bg-[#0f1720]">
+                          {UNIT_TYPE_LABELS[u]}
+                        </option>
+                      ))}
+                    </select>
+                    <Button variant="ghost" size="sm" onClick={applyBulkUnit} className="h-6 px-2 text-xs">
+                      Aplicar
+                    </Button>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={addItem}>
+                    <Plus className="h-4 w-4" />
+                    Novo Item
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-4">
                 {itens.map((item, index) => (
                   <div
                     key={item.id}
-                    className="relative p-4 bg-neutral-50 rounded-[var(--radius-lg)] border border-neutral-200 group animate-fade-in"
+                    className="relative p-4 bg-[#0f1720] rounded-[var(--radius-lg)] border border-white/[0.06] group animate-fade-in"
                   >
-                    {itens.length > 1 && (
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="absolute top-2 right-2 p-1 text-neutral-400 hover:text-danger opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                      <div className="md:col-span-6">
-                        <Input
-                          label="Produto / Serviço *"
-                          placeholder="Nome do item"
-                          value={item.nome_produto}
-                          onChange={(e) => updateItem(item.id, "nome_produto", e.target.value)}
-                        />
+                    {/* Item header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                        <Package className="h-3.5 w-3.5" />
+                        Item {index + 1}
+                      </span>
+                      {itens.length > 1 && (
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="p-1 text-gray-600 hover:text-red-400 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Row 1: Barcode search + Nome */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div className="md:col-span-4 relative">
+                          <Input
+                            label="Código de Barras"
+                            placeholder="Escanear ou digitar..."
+                            value={item.codigo_barras}
+                            onChange={(e) => updateItem(item.id, "codigo_barras", e.target.value)}
+                            onBlur={(e) => handleBarcodeSearch(item.id, e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleBarcodeSearch(item.id, item.codigo_barras)}
+                            className="absolute right-2 bottom-2 p-1 text-gray-500 hover:text-indigo-400 transition-colors cursor-pointer"
+                          >
+                            {item._barcodeLoading ? (
+                              <Search className="h-4 w-4 animate-pulse" />
+                            ) : (
+                              <Barcode className="h-4 w-4" />
+                            )}
+                          </button>
+                          {item._barcodeFound === true && (
+                            <p className="text-[10px] text-emerald-400 mt-1">✓ Produto encontrado no catálogo</p>
+                          )}
+                          {item._barcodeFound === false && (
+                            <p className="text-[10px] text-yellow-500 mt-1">Produto não encontrado — preencha manualmente</p>
+                          )}
+                        </div>
+                        <div className="md:col-span-8">
+                          <Input
+                            label="Nome do Produto *"
+                            placeholder="Nome do item"
+                            value={item.nome_produto}
+                            onChange={(e) => updateItem(item.id, "nome_produto", e.target.value)}
+                          />
+                        </div>
                       </div>
-                      <div className="md:col-span-3">
-                        <Input
-                          label="Quantidade *"
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={item.quantidade}
-                          onChange={(e) => updateItem(item.id, "quantidade", parseFloat(e.target.value) || 0)}
-                        />
+
+                      {/* Row 2: Categoria + Descrição */}
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div className="md:col-span-4">
+                          <Select
+                            label="Categoria"
+                            options={CATEGORIAS.map((c) => ({ value: c.value, label: c.label }))}
+                            value={item.categoria}
+                            onChange={(e) => updateItem(item.id, "categoria", e.target.value)}
+                          />
+                        </div>
+                        <div className="md:col-span-8">
+                          <Input
+                            label="Descrição (opcional)"
+                            placeholder="Marca, sabor, tamanho, etc."
+                            value={item.descricao}
+                            onChange={(e) => updateItem(item.id, "descricao", e.target.value)}
+                          />
+                        </div>
                       </div>
-                      <div className="md:col-span-3">
-                        <Select
-                          label="Unidade"
-                          options={UNIDADES.map(u => ({ value: u, label: u }))}
-                          value={item.unidade}
-                          onChange={(e) => updateItem(item.id, "unidade", e.target.value)}
-                        />
-                      </div>
-                      <div className="md:col-span-12">
-                        <Input
-                          label="Especificação (opcional)"
-                          placeholder="Cor, marca, modelo, etc."
-                          value={item.observacao}
-                          onChange={(e) => updateItem(item.id, "observacao", e.target.value)}
-                        />
+
+                      {/* Row 3: Estoque | Qtd Sugerida | Unidade */}
+                      <div className="grid grid-cols-2 md:grid-cols-12 gap-3">
+                        <div className="col-span-1 md:col-span-3">
+                          <Input
+                            label="Estoque Atual"
+                            type="number"
+                            min="0"
+                            step="1"
+                            placeholder="0"
+                            value={item.estoque_atual}
+                            onChange={(e) => updateItem(item.id, "estoque_atual", e.target.value)}
+                          />
+                          <p className="text-[10px] text-gray-600 mt-1">Interno — não visível ao fornecedor</p>
+                        </div>
+                        <div className="col-span-1 md:col-span-3">
+                          <Input
+                            label="Qtd a Comprar *"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={item.quantidade_sugerida}
+                            onChange={(e) => updateItem(item.id, "quantidade_sugerida", e.target.value)}
+                          />
+                        </div>
+                        <div className="col-span-2 md:col-span-3">
+                          <label className="block text-xs font-medium text-gray-400 mb-1.5">
+                            Unidade Comercial *
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={item.tipo_unidade}
+                              onChange={(e) => updateItem(item.id, "tipo_unidade", e.target.value as UnitType)}
+                              className="w-full h-10 bg-[#1a2535] border border-white/[0.08] rounded-[var(--radius-md)] text-white text-sm pl-3 pr-8 appearance-none outline-none focus:border-indigo-500 transition-colors cursor-pointer"
+                            >
+                              {UNIT_TYPES.map((u) => (
+                                <option key={u} value={u} className="bg-[#0f1720]">
+                                  {u} — {UNIT_TYPE_LABELS[u]}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-500 pointer-events-none" />
+                          </div>
+                          <p className="text-[10px] text-gray-600 mt-1">
+                            Fornecedor cotará preço por {UNIT_TYPE_LABELS[item.tipo_unidade]}
+                          </p>
+                        </div>
+                        <div className="col-span-2 md:col-span-3">
+                          <Input
+                            label="Observação"
+                            placeholder="Especificação..."
+                            value={item.observacao}
+                            onChange={(e) => updateItem(item.id, "observacao", e.target.value)}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -258,37 +415,72 @@ export default function NovaCotacaoPage() {
           {/* ─── Step 3: Revisão ─── */}
           {currentStep === 2 && (
             <div className="space-y-6 animate-fade-in">
-              <div className="bg-primary-50 p-4 rounded-[var(--radius-lg)] border border-primary-100">
-                <h3 className="text-sm font-semibold text-primary-900 mb-2">Dados da Cotação</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-primary-800">
+              <div className="bg-indigo-500/10 p-4 rounded-[var(--radius-lg)] border border-indigo-500/20">
+                <h3 className="text-sm font-semibold text-indigo-300 mb-2">Dados da Cotação</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-300">
                   <p><span className="font-medium">Título:</span> {titulo}</p>
-                  <p><span className="font-medium">Categoria:</span> {categorias.find(c => c.value === categoria)?.label}</p>
-                  <p><span className="font-medium">Prazo:</span> {prazo ? new Date(prazo).toLocaleString('pt-BR') : "Não definido"}</p>
+                  <p><span className="font-medium">Prazo:</span> {prazo ? new Date(prazo).toLocaleString("pt-BR") : "Não definido"}</p>
+                  {descricao && <p className="col-span-2 text-gray-400 italic">{descricao}</p>}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-neutral-900 mb-3">Itens ({itens.length})</h3>
-                <div className="border border-neutral-200 rounded-[var(--radius-md)] overflow-hidden">
+                <h3 className="text-base font-semibold text-white mb-3">
+                  Itens ({itens.filter((i) => i.nome_produto).length})
+                </h3>
+                <div className="border border-white/[0.06] rounded-[var(--radius-md)] overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-neutral-50 text-neutral-500 text-xs uppercase font-medium">
+                    <thead className="bg-white/[0.04] text-gray-400 text-xs uppercase font-medium">
                       <tr>
-                        <th className="px-4 py-3 text-left">Item</th>
+                        <th className="px-4 py-3 text-left">Produto</th>
+                        <th className="px-4 py-3 text-left">Barcode</th>
+                        <th className="px-4 py-3 text-left">Categoria</th>
+                        <th className="px-4 py-3 text-center">Estoque</th>
                         <th className="px-4 py-3 text-center">Qtd</th>
-                        <th className="px-4 py-3 text-left">Especificação</th>
+                        <th className="px-4 py-3 text-center">Unidade</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-100">
-                      {itens.filter(i => i.nome_produto).map((item) => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-3 text-neutral-800 font-medium">{item.nome_produto}</td>
-                          <td className="px-4 py-3 text-center text-neutral-600">{item.quantidade} {item.unidade}</td>
-                          <td className="px-4 py-3 text-neutral-500 text-xs italic">{item.observacao || "—"}</td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-white/[0.04]">
+                      {itens
+                        .filter((i) => i.nome_produto)
+                        .map((item) => (
+                          <tr key={item.id}>
+                            <td className="px-4 py-3">
+                              <p className="text-gray-200 font-medium">{item.nome_produto}</p>
+                              {item.descricao && (
+                                <p className="text-[10px] text-gray-500 italic mt-0.5">{item.descricao}</p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-gray-400 font-mono text-xs">
+                              {item.codigo_barras || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-400 capitalize">
+                              {item.categoria || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-500 text-xs">
+                              {item.estoque_atual || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-center text-gray-300 font-medium">
+                              {item.quantidade_sugerida || 1}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded text-xs font-bold">
+                                {item.tipo_unidade}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-[var(--radius-lg)]">
+                <Info className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-emerald-400/80 leading-relaxed">
+                  Os fornecedores receberão: <strong>Nome, Barcode, Categoria</strong> e a <strong>Unidade Comercial</strong>.
+                  Campos de <em>Estoque</em> não serão compartilhados.
+                </p>
               </div>
             </div>
           )}
@@ -319,4 +511,3 @@ export default function NovaCotacaoPage() {
     </div>
   );
 }
-

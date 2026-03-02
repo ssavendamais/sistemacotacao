@@ -1,6 +1,8 @@
 'use server'
 
+import { createOrganization } from '@/actions/organizations'
 import { createClient } from '@/lib/supabase/server'
+import type { OrganizationTipo } from '@/lib/types/database'
 import { redirect } from 'next/navigation'
 
 export async function signUp(formData: FormData) {
@@ -11,6 +13,7 @@ export async function signUp(formData: FormData) {
   const nome = formData.get('nome') as string
   const tipo = formData.get('tipo') as 'empresario' | 'fornecedor'
   const empresa = formData.get('empresa') as string | null
+  const cnpj = formData.get('cnpj') as string | null
   const telefone = formData.get('telefone') as string | null
 
   if (!email || !password || !nome || !tipo) {
@@ -36,6 +39,16 @@ export async function signUp(formData: FormData) {
 
   if (!data.session) {
     return { error: 'Conta criada! Por favor, verifique seu e-mail para confirmar o cadastro antes de logar.' }
+  }
+
+  // Criar organização automaticamente se houver nome de empresa
+  if (empresa?.trim()) {
+    const orgTipo: OrganizationTipo = tipo === 'fornecedor' ? 'fornecedor' : 'lojista'
+    await createOrganization({
+      name: empresa.trim(),
+      cnpj: cnpj ?? null,
+      tipo: orgTipo,
+    })
   }
 
   const dashboardPath =

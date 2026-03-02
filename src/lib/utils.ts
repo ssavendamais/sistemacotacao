@@ -62,3 +62,51 @@ export function truncate(str: string, maxLength: number): string {
   if (str.length <= maxLength) return str;
   return str.slice(0, maxLength) + "…";
 }
+
+// ─── Utilitários de preço estilo maquininha ──────────────────────────────────
+
+/**
+ * Converte um número decimal (do banco) em centavos inteiros.
+ * Ex: 12.50 → 1250
+ */
+export function decimalToCents(decimal: number | null | undefined): number {
+  if (decimal == null || isNaN(decimal)) return 0;
+  return Math.round(decimal * 100);
+}
+
+/**
+ * Converte centavos inteiros em decimal para salvar no banco.
+ * Ex: 1250 → 12.50
+ */
+export function centsToDecimal(cents: number): number {
+  return cents / 100;
+}
+
+/**
+ * Formata centavos inteiros como string no formato brasileiro.
+ * Ex: 1250 → "R$\u00a012,50"
+ */
+export function formatCents(cents: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+  }).format(cents / 100);
+}
+
+/**
+ * Handler de onChange para campos de preço estilo maquininha.
+ * Recebe o valor digitado (string), retorna o novo estado em centavos.
+ *
+ * Uso:
+ *   const [cents, setCents] = useState(0)
+ *   <input value={formatCents(cents)} onChange={e => setCents(handleCentsInput(e.target.value))} />
+ */
+export function handleCentsInput(rawValue: string): number {
+  // Remove tudo que não for dígito
+  const digits = rawValue.replace(/\D/g, '');
+  if (!digits) return 0;
+  // Limita a 10 dígitos (R$ 99.999.999,99)
+  const clamped = digits.slice(-10);
+  return parseInt(clamped, 10);
+}

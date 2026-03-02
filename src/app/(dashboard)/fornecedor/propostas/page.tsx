@@ -37,17 +37,17 @@ export default async function MinhasPropostasPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">
+        <h1 className="text-2xl font-bold text-white">
           Minhas Propostas
         </h1>
-        <p className="text-neutral-500 text-sm mt-1">
+        <p className="text-gray-400 text-sm mt-1">
           Acompanhe o status das suas propostas
         </p>
       </div>
 
       {!propostas || propostas.length === 0 ? (
-        <div className="bg-white rounded-[var(--radius-lg)] border border-neutral-100 p-12 text-center shadow-xs">
-          <p className="text-neutral-500">
+        <div className="bg-[#1F2937] rounded-[var(--radius-lg)] border border-white/[0.06] p-12 text-center shadow-xs">
+          <p className="text-gray-400">
             Você ainda não enviou nenhuma proposta.
           </p>
         </div>
@@ -56,12 +56,12 @@ export default async function MinhasPropostasPage() {
           {propostas.map((proposta) => (
             <div
               key={proposta.id}
-              className="bg-white rounded-[var(--radius-lg)] border border-neutral-100 p-5 shadow-xs"
+              className="bg-[#1F2937] rounded-[var(--radius-lg)] border border-white/[0.06] p-5 shadow-xs"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold text-neutral-900 truncate">
+                    <h3 className="text-sm font-semibold text-gray-200 truncate">
                       {(proposta as any).cotacoes?.titulo}
                     </h3>
                     <Badge variant={statusColors[proposta.status]}>
@@ -72,7 +72,7 @@ export default async function MinhasPropostasPage() {
                       }
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-neutral-400">
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
                     <span>
                       {(proposta as any).cotacoes?.profiles?.empresa ||
                         (proposta as any).cotacoes?.profiles?.nome}
@@ -81,12 +81,12 @@ export default async function MinhasPropostasPage() {
                   </div>
                 </div>
                 <div className="text-right ml-4">
-                  <p className="text-lg font-bold text-neutral-900">
+                  <p className="text-lg font-bold text-white">
                     {proposta.valor_total
                       ? formatCurrency(proposta.valor_total)
                       : "—"}
                   </p>
-                  <p className="text-xs text-neutral-400">Valor total</p>
+                  <p className="text-xs text-gray-500">Valor total</p>
                 </div>
               </div>
             </div>

@@ -20,7 +20,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-neutral-700"
+            className="text-sm font-medium text-gray-300"
           >
             {label}
           </label>
@@ -30,13 +30,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           className={cn(
             "w-full border rounded-[var(--radius-md)] px-3.5 py-2.5 text-sm",
-            "bg-white text-neutral-800",
-            "placeholder:text-neutral-400",
+            "bg-[#1a2332] text-gray-100",
+            "placeholder:text-gray-500",
             "focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400",
             "transition-all outline-none",
             error
-              ? "border-red-300 focus:ring-red-500/20 focus:border-red-400"
-              : "border-neutral-200",
+               ? "border-red-500/40 focus:ring-red-500/20 focus:border-red-400"
+              : "border-white/10",
             className
           )}
           {...props}
@@ -45,7 +45,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <p className="text-xs text-danger">{error}</p>
         )}
         {helper && !error && (
-          <p className="text-xs text-neutral-400">{helper}</p>
+          <p className="text-xs text-gray-500">{helper}</p>
         )}
       </div>
     );
@@ -70,7 +70,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-neutral-700"
+            className="text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
             {label}
           </label>
@@ -80,13 +80,13 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={inputId}
           className={cn(
             "w-full border rounded-[var(--radius-md)] px-3.5 py-2.5 text-sm",
-            "bg-white text-neutral-800 min-h-[100px] resize-y",
-            "placeholder:text-neutral-400",
+            "bg-[#1a2332] text-gray-100 min-h-[100px] resize-y",
+            "placeholder:text-gray-500",
             "focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400",
             "transition-all outline-none",
             error
-              ? "border-red-300 focus:ring-red-500/20 focus:border-red-400"
-              : "border-neutral-200",
+              ? "border-red-500/40 focus:ring-red-500/20 focus:border-red-400"
+              : "border-white/10",
             className
           )}
           {...props}
@@ -95,7 +95,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           <p className="text-xs text-danger">{error}</p>
         )}
         {helper && !error && (
-          <p className="text-xs text-neutral-400">{helper}</p>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500">{helper}</p>
         )}
       </div>
     );
@@ -122,7 +122,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-sm font-medium text-neutral-700"
+            className="text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
             {label}
           </label>
@@ -132,12 +132,12 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           id={inputId}
           className={cn(
             "w-full border rounded-[var(--radius-md)] px-3.5 py-2.5 text-sm",
-            "bg-white text-neutral-800 appearance-none",
+            "bg-[#1a2332] text-gray-100 appearance-none",
             "focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400",
             "transition-all outline-none cursor-pointer",
             error
-              ? "border-red-300 focus:ring-red-500/20 focus:border-red-400"
-              : "border-neutral-200",
+              ? "border-red-500/40 focus:ring-red-500/20 focus:border-red-400"
+              : "border-white/10",
             className
           )}
           {...props}
@@ -157,7 +157,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           <p className="text-xs text-danger">{error}</p>
         )}
         {helper && !error && (
-          <p className="text-xs text-neutral-400">{helper}</p>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500">{helper}</p>
         )}
       </div>
     );
@@ -166,4 +166,3 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 Select.displayName = "Select";
 
 export { Input, Select, Textarea };
-

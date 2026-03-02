@@ -35,7 +35,7 @@ export async function getCotacao(id: string) {
         profiles:fornecedor_id (nome, empresa),
         proposta_itens (
           *,
-          cotacao_itens:cotacao_item_id (nome_produto, unidade, quantidade)
+          cotacao_itens:cotacao_item_id (nome_produto, unidade, tipo_unidade, quantidade, quantidade_sugerida)
         )
       )
     `)
@@ -44,6 +44,49 @@ export async function getCotacao(id: string) {
 
   if (error) throw new Error(error.message)
   return data
+}
+
+// Supplier-safe version — omits internal fields (estoque_atual, quantidade_sugerida)
+export async function getCotacaoParaFornecedor(id: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('cotacoes')
+    .select(`
+      id, titulo, descricao, status, data_limite, created_at,
+      profiles:empresario_id (nome, empresa),
+      cotacao_itens (id, nome_produto, descricao, codigo_barras, categoria, tipo_unidade, quantidade, observacao)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function buscarProdutoPorBarcode(barcode: string) {
+  const supabase = await createClient()
+
+  const { data } = await supabase
+    .from('products')
+    .select('id, name, description, barcode, category, image_url, price_unit_store')
+    .eq('barcode', barcode)
+    .maybeSingle()
+
+  return data
+}
+
+interface ItemCotacao {
+  nome_produto: string
+  descricao?: string
+  codigo_barras?: string
+  categoria?: string
+  estoque_atual?: number
+  quantidade_sugerida?: number
+  tipo_unidade: 'UN' | 'CX' | 'DZ'
+  quantidade: number
+  observacao?: string
+  product_id?: string
 }
 
 export async function criarCotacao(formData: FormData) {
@@ -64,7 +107,7 @@ export async function criarCotacao(formData: FormData) {
 
   // Parse itens from FormData
   const itensJson = formData.get('itens') as string
-  let itens: { nome_produto: string; unidade: string; quantidade: number; observacao?: string }[] = []
+  let itens: ItemCotacao[] = []
 
   try {
     itens = JSON.parse(itensJson || '[]')
@@ -95,9 +138,16 @@ export async function criarCotacao(formData: FormData) {
     itens.map((item) => ({
       cotacao_id: cotacao.id,
       nome_produto: item.nome_produto,
-      unidade: item.unidade || 'un',
+      descricao: item.descricao || null,
+      unidade: item.tipo_unidade.toLowerCase(), // backward compat
+      tipo_unidade: item.tipo_unidade || 'UN',
       quantidade: item.quantidade,
+      codigo_barras: item.codigo_barras || null,
+      categoria: item.categoria || null,
+      estoque_atual: item.estoque_atual ?? null,
+      quantidade_sugerida: item.quantidade_sugerida ?? item.quantidade,
       observacao: item.observacao || null,
+      product_id: item.product_id || null,
     }))
   )
 

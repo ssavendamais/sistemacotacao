@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/components/theme-provider";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
@@ -27,9 +28,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className={`${inter.variable} ${jetbrains.variable} antialiased`}>
-        {children}
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        {/* Prevent flash of wrong theme */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem('theme');
+                const d = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (t === 'dark' || (!t && d)) document.documentElement.classList.add('dark');
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className={`${inter.variable} ${jetbrains.variable} antialiased bg-neutral-50 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 transition-colors`}>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

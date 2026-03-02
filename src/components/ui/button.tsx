@@ -13,15 +13,15 @@ const buttonVariants = cva(
         primary:
           "bg-primary-500 hover:bg-primary-600 active:bg-primary-700 text-white shadow-sm",
         secondary:
-          "bg-white border border-neutral-200 hover:bg-neutral-50 active:bg-neutral-100 text-neutral-700 shadow-xs",
+          "bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-600 active:bg-neutral-100 dark:active:bg-neutral-500 text-neutral-700 dark:text-neutral-200 shadow-xs",
         ghost:
-          "hover:bg-neutral-100 active:bg-neutral-200 text-neutral-600",
+          "hover:bg-neutral-100 dark:hover:bg-neutral-700 active:bg-neutral-200 dark:active:bg-neutral-600 text-neutral-600 dark:text-neutral-300",
         danger:
           "bg-danger hover:bg-red-600 active:bg-red-700 text-white shadow-sm",
         success:
           "bg-success hover:bg-emerald-600 active:bg-emerald-700 text-white shadow-sm",
         link:
-          "text-primary-500 hover:text-primary-700 underline-offset-4 hover:underline p-0 h-auto",
+          "text-primary-500 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline-offset-4 hover:underline p-0 h-auto",
       },
       size: {
         sm: "text-sm px-3 py-1.5 rounded-[var(--radius-sm)]",

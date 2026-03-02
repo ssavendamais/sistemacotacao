@@ -50,7 +50,6 @@ export async function updateSession(request: NextRequest) {
   )
 
   if (isAuthPage && user) {
-    // Fetch user profile to determine type
     const { data: profile } = await supabase
       .from('profiles')
       .select('tipo')
@@ -67,5 +66,35 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Fase 1 + 1.5 — Injetar org_id no header, com suporte a impersonação segura
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('active_organization_id, global_role')
+      .eq('id', user.id)
+      .single()
+
+    // Impersonação: super_admin com cookie acting_as_org_id sobrescreve x-org-id
+    // sem alterar o banco — apenas o contexto da request atual
+    const actingAsOrgId = request.cookies.get('acting_as_org_id')?.value
+    const isSuperAdmin = profile?.global_role === 'super_admin'
+
+    if (isSuperAdmin && actingAsOrgId) {
+      // Modo impersonação ativo: usa a org do cookie
+      supabaseResponse.headers.set('x-org-id', actingAsOrgId)
+      supabaseResponse.headers.set('x-impersonating', 'true')
+    } else if (profile?.active_organization_id) {
+      // Modo normal: usa a org ativa do banco
+      supabaseResponse.headers.set('x-org-id', profile.active_organization_id)
+    }
+
+    // Sempre informa se é super_admin para os layouts
+    if (isSuperAdmin) {
+      supabaseResponse.headers.set('x-is-super-admin', 'true')
+    }
+  }
+
   return supabaseResponse
 }
+
+
